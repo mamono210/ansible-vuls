@@ -24,6 +24,16 @@ cd ansible-vuls
 ansible-playbook -i localhost.cfg site.yml
 ```
 
+
+# Vulsを実行する
+
+ユーザーvulsでのみ実行可能です。
+
+```
+su vuls
+vuls
+```
+
 # vars ファイルについて
 
 vars/default.ymlにて以下の値を設定しています。適宜変更してください。
