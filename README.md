@@ -2,7 +2,7 @@
 
 このPlaybookはCentOS7へ [Vuls](https://github.com/future-architect/vuls) をインストールします。
 
-# Ansibleをインストールする
+### Ansibleをインストールする
 
 rootで以下のコマンドを実行します。
    
@@ -12,7 +12,7 @@ yum -y install ansible
 ansible --version
 ```
 
-# Vulsをインストールする
+### Vulsをインストールする
 
 localhostでrootで以下のコマンドを実行します。
 
@@ -25,7 +25,7 @@ ansible-playbook -i localhost.cfg site.yml
 ```
 
 
-# Vulsを実行する
+### Vulsを実行する
 
 ユーザーvulsでのみ実行可能です。
 
@@ -34,7 +34,7 @@ su vuls
 vuls
 ```
 
-# vars ファイルについて
+### vars ファイルについて
 
 vars/default.ymlにて以下の値を設定しています。適宜変更してください。
 
