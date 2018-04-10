@@ -2,7 +2,7 @@
   become: yes
   yum:
     name: '{{ item }}'
-  with_items:
+  loop:
     - sqlite
     - git
     - gcc
