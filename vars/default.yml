@@ -1,0 +1,5 @@
+work_dir: /tmp/vuls-install-dir
+vuls_user: vuls
+go_path: "/home/{{ vuls_user}}/go"
+
+first_year: 2018

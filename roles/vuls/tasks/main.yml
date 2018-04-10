@@ -1,0 +1,129 @@
+- name: 必要なライブラリをインストールする
+  become: yes
+  yum:
+    name: '{{ item }}'
+  loop:
+    - sqlite
+    - git
+    - gcc
+    - make
+    - wget
+
+- name: Vulsが利用するログファイルディレクトリを作成する
+  become: yes
+  file:
+    path: /var/log/vuls
+    state: directory 
+    owner: '{{ vuls_user }}'
+    group: '{{ vuls_user }}'
+    mode: 0700
+
+- name: "{{ vuls_user }} のホームディレクトリへ $GOPATH ディレクトリを作成する"
+  become: yes
+  file:
+    path: '{{ go_path }}'
+    state: directory
+    owner: '{{ vuls_user }}'
+    group: '{{ vuls_user }}'
+    mode: 0755
+
+- name: $GOPATH 以下へ kotakanbe ディレクトリを作成する
+  become: yes
+  file:
+    path: "{{ go_path }}/src/github.com/kotakanbe/go-cve-dictionary"
+    state: directory
+    owner: '{{ vuls_user }}'
+    group: '{{ vuls_user }}'
+    mode: 0755
+
+- name: go-cve-dictionary (NVD (National Vulnerabilities Database)) をGithubから取得する
+  become: yes
+  git:
+    repo: https://github.com/kotakanbe/go-cve-dictionary.git
+    dest: "{{ go_path }}/src/github.com/kotakanbe/go-cve-dictionary"
+    force: yes
+
+- name: "go-cve-dictionary のバイナリを {{ go_path }}/bin へ作成する"
+  become: yes
+  become_method: su
+  become_user: '{{ vuls_user }}'
+  shell: /bin/bash -lc "make install"
+  args:
+    chdir: "{{ go_path }}/src/github.com/kotakanbe/go-cve-dictionary"
+  environment:
+    GOPATH: '{{ go_path }}'
+    PATH: "{{ go_path }}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:{{ ansible_env.PATH }}"
+
+- name: NVDから脆弱性データベースを取得する 
+  become: yes
+  become_method: su
+  become_user: '{{ vuls_user }}'
+  shell: 'for i in `seq {{ first_year }} $(date +"%Y")`; do {{ go_path }}/bin/go-cve-dictionary fetchnvd -years $i; done'
+  args:
+    chdir: "/home/{{ vuls_user }}"
+  environment:
+    GOPATH: '{{ go_path }}'
+
+- name: NVDから日本語の脆弱性データベースを取得する
+  become: yes
+  become_method: su
+  become_user: '{{ vuls_user }}'
+  shell: 'for i in `seq {{ first_year }} $(date +"%Y")`; do {{ go_path }}/bin/go-cve-dictionary fetchjvn -years $i; done'
+  args:
+    chdir: "/home/{{ vuls_user }}"
+  environment:
+    GOPATH: '{{ go_path }}'
+
+- name: OVAL ライブラリを取得するためのディレクトリを作成する
+  become: yes
+  file:
+    path: "{{ go_path }}/src/github.com/kotakanbe/goval-dictionary"
+    state: directory
+    mode: 0755
+    owner: '{{ vuls_user }}'
+    group: '{{ vuls_user }}'
+
+- name: Githubから Golang用の OVAL ライブラリを取得する
+  become: yes
+  git:
+    repo: https://github.com/kotakanbe/goval-dictionary.git
+    dest: "{{ go_path }}/src/github.com/kotakanbe/goval-dictionary"
+    force: yes
+
+- name: OVAL ライブラリをバイナリ化する
+  become: yes
+  become_method: su
+  become_user: '{{ vuls_user }}'
+  shell: /bin/bash -lc "make install"
+  args:
+    chdir: "{{ go_path }}/src/github.com/kotakanbe/goval-dictionary"
+  environment:
+    GOPATH: '{{ go_path }}'
+    PATH: "{{ go_path }}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:{{ ansible_env.PATH }}"
+
+- name: Vulsを取得するためのディレクトリを作成する
+  become: yes
+  file:
+    path: "{{ go_path }}/src/github.com/future-architect/vuls"
+    state: directory
+    owner: '{{ vuls_user }}'
+    group: '{{ vuls_user }}'
+    mode: 0755
+
+- name: Vuls をGithubから取得する
+  become: yes
+  git:
+    repo: https://github.com/future-architect/vuls.git
+    dest: "{{ go_path }}/src/github.com/future-architect/vuls"
+    force: yes 
+
+- name: Vulsのバイナリデータを作成する
+  become: yes
+  become_method: su
+  become_user: '{{ vuls_user }}'
+  shell: /bin/bash -lc "make install"
+  args:
+    chdir: "{{ go_path }}/src/github.com/future-architect/vuls"
+  environment:
+    GOPATH: '{{ go_path }}'
+    PATH: "{{ go_path }}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:{{ ansible_env.PATH }}"

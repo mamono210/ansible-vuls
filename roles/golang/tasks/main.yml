@@ -1,0 +1,44 @@
+- name: 作業用ディレクトリを初期化する
+  become: yes
+  file:
+    path: '{{ work_dir }}'
+    state: absent
+
+- name: 作業用ディレクトリを作成する 
+  become: yes
+  file:
+    path: '{{ work_dir }}'
+    state: directory
+    mode: 0755
+
+- name: GolangのDockerfileを取得する
+  git:
+    repo: https://github.com/docker-library/golang.git 
+    dest: "{{ work_dir }}/golang"
+
+- name: Golangの最新バージョン番号をDockerfileから取得する
+  shell:
+    "find {{ work_dir }}/golang -type f -name Dockerfile | awk 'NR == 1{print}' | xargs cat | grep 'ENV GOLANG_VERSION' | awk '{print $3}'"
+  register: DOCKER_VERSION 
+
+- name: 最新版のGolangをダウンロード、インストールする
+  become: yes
+  unarchive:  
+    src: "https://dl.google.com/go/go{{ DOCKER_VERSION.stdout }}.linux-amd64.tar.gz"
+    dest: /usr/local
+    remote_src: yes 
+
+- name: Golang実行ファイルのパスの設定を行う
+  become: yes
+  copy:
+    src: files/goenv.sh
+    dest: /etc/profile.d/goenv.sh
+    owner: root
+    group: root
+    mode: 0644
+
+- name: パスの設定を反映させる
+  become: yes
+  shell: source /etc/profile.d/goenv.sh
+  args:
+    executable: /bin/bash

@@ -1,0 +1,11 @@
+---
+- hosts: all
+  become: yes 
+  vars_files:
+    - vars/default.yml 
+ 
+  roles:
+    - role: golang
+      tags: golang
+    - role: vuls
+      tags: vuls
